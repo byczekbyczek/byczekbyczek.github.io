@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>BlitzPredict | World of Tanks Blitz analytics proof of concept</title>
+    <meta name="description" content="BlitzPredict is a working Python proof of concept that recognizes 14 players from a World of Tanks Blitz loading screen, retrieves public Wargaming API statistics, and renders a tactical HUD.">
+    <meta name="theme-color" content="#07111f">
+    <meta name="robots" content="index,follow">
+    <link rel="canonical" href="https://blitzpredict.info/">
+    <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="BlitzPredict | Working analytics proof of concept">
+    <meta property="og:description" content="Screenshot → OCR → nickname correction → public Wargaming API → tactical HUD.">
+    <meta property="og:url" content="https://blitzpredict.info/">
+    <meta property="og:image" content="https://blitzpredict.info/assets/demo-output.png">
+    <meta name="twitter:card" content="summary_large_image">
+
+    <style>
+        :root {
+            --background: #07111f;
+            --background-soft: #0b1728;
+            --surface: rgba(17, 32, 52, 0.78);
+            --surface-solid: #112034;
+            --surface-light: #172a43;
+            --border: rgba(148, 163, 184, 0.18);
+            --border-strong: rgba(96, 165, 250, 0.4);
+            --text: #f8fafc;
+            --muted: #9fb0c6;
+            --blue: #60a5fa;
+            --blue-strong: #3b82f6;
+            --cyan: #22d3ee;
+            --green: #34d399;
+            --amber: #fbbf24;
+            --shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
+            --radius: 22px;
+            --radius-small: 14px;
+            --content-width: 1160px;
+        }
+
+        * { box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+        body {
+            margin: 0;
+            color: var(--text);
+            background:
+                radial-gradient(circle at 12% 8%, rgba(59, 130, 246, 0.16), transparent 28rem),
+                radial-gradient(circle at 88% 14%, rgba(34, 211, 238, 0.09), transparent 24rem),
+                var(--background);
+            font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            line-height: 1.6;
+        }
+        body::before {
+            position: fixed;
+            inset: 0;
+            z-index: -1;
+            pointer-events: none;
+            content: "";
+            opacity: 0.18;
+            background-image:
+                linear-gradient(rgba(148, 163, 184, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(148, 163, 184, 0.05) 1px, transparent 1px);
+            background-size: 44px 44px;
+            mask-image: linear-gradient(to bottom, black, transparent 75%);
+        }
+
+        a { color: inherit; text-decoration: none; }
+        img { display: block; max-width: 100%; }
+        p { margin-top: 0; }
+        h1, h2, h3 { margin-top: 0; line-height: 1.12; }
+
+        .skip-link {
+            position: absolute;
+            top: -60px;
+            left: 16px;
+            z-index: 100;
+            padding: 10px 14px;
+            color: #07111f;
+            background: white;
+            border-radius: 8px;
+        }
+        .skip-link:focus { top: 16px; }
+        .container { width: min(calc(100% - 40px), var(--content-width)); margin-inline: auto; }
+
+        .site-header {
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+            background: rgba(7, 17, 31, 0.8);
+            backdrop-filter: blur(18px);
+        }
+        .navigation {
+            min-height: 72px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 24px;
+        }
+        .brand {
+            display: inline-flex;
+            align-items: center;
+            gap: 11px;
+            font-size: 1.04rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+        }
+        .brand-mark {
+            width: 36px;
+            height: 36px;
+            display: grid;
+            place-items: center;
+            border: 1px solid rgba(96, 165, 250, 0.45);
+            border-radius: 11px;
+            color: #07111f;
+            background: linear-gradient(135deg, #8bc4ff, #43d8e7);
+            box-shadow: 0 10px 28px rgba(59, 130, 246, 0.25);
+            font-size: 0.86rem;
+            font-weight: 900;
+        }
+        .brand small { display: block; color: var(--muted); font-size: 0.65rem; font-weight: 650; letter-spacing: 0; }
+        .nav-links { display: flex; align-items: center; gap: 23px; color: var(--muted); font-size: 0.9rem; }
+        .nav-links a { transition: color 160ms ease; }
+        .nav-links a:hover { color: white; }
+        .mobile-menu { display: none; position: relative; }
+        .mobile-menu summary { cursor: pointer; list-style: none; color: var(--muted); font-weight: 750; }
+        .mobile-menu summary::-webkit-details-marker { display: none; }
+        .mobile-menu nav {
+            position: absolute;
+            right: 0;
+            top: 38px;
+            min-width: 220px;
+            display: grid;
+            gap: 6px;
+            padding: 12px;
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            background: #0b1728;
+            box-shadow: var(--shadow);
+        }
+        .mobile-menu nav a { padding: 9px 11px; border-radius: 9px; color: var(--muted); }
+        .mobile-menu nav a:hover { color: white; background: rgba(255,255,255,.04); }
+
+        .hero { padding: 92px 0 50px; }
+        .hero-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 0.96fr) minmax(400px, 1.04fr);
+            align-items: center;
+            gap: 58px;
+        }
+        .badge {
+            width: fit-content;
+            display: inline-flex;
+            align-items: center;
+            gap: 9px;
+            margin-bottom: 22px;
+            padding: 7px 12px;
+            border: 1px solid rgba(96, 165, 250, 0.27);
+            border-radius: 999px;
+            color: #c8dcfa;
+            background: rgba(59, 130, 246, 0.09);
+            font-size: 0.82rem;
+            font-weight: 750;
+        }
+        .badge-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); box-shadow: 0 0 0 5px rgba(52, 211, 153, 0.11); }
+        h1 { max-width: 760px; margin-bottom: 24px; font-size: clamp(3rem, 7vw, 5.4rem); letter-spacing: -0.058em; }
+        .gradient-text { color: transparent; background: linear-gradient(100deg, #ffffff 5%, #8fc2ff 48%, #4de3ef); background-clip: text; -webkit-background-clip: text; }
+        .hero-description { max-width: 690px; margin-bottom: 30px; color: var(--muted); font-size: clamp(1.04rem, 2vw, 1.2rem); }
+        .hero-actions, .contact-actions { display: flex; flex-wrap: wrap; gap: 12px; }
+        .button {
+            min-height: 48px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 9px;
+            padding: 0 18px;
+            border: 1px solid transparent;
+            border-radius: 12px;
+            font-weight: 800;
+            transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
+        }
+        .button:hover { transform: translateY(-2px); }
+        .button-primary { color: #06111f; background: linear-gradient(135deg, #8bc4ff, #43d8e7); box-shadow: 0 15px 42px rgba(59, 130, 246, 0.24); }
+        .button-secondary { border-color: var(--border); background: rgba(255, 255, 255, 0.035); }
+        .button-secondary:hover { border-color: rgba(96, 165, 250, 0.5); }
+        .hero-note { margin-top: 17px; color: #70839c; font-size: 0.84rem; }
+
+        .product-preview {
+            overflow: hidden;
+            border: 1px solid rgba(96, 165, 250, 0.28);
+            border-radius: var(--radius);
+            background: linear-gradient(160deg, rgba(27, 50, 80, 0.9), rgba(9, 20, 35, 0.96));
+            box-shadow: var(--shadow);
+        }
+        .window-bar {
+            min-height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 17px;
+            border-bottom: 1px solid var(--border);
+            background: rgba(4, 12, 23, 0.58);
+        }
+        .window-dots { display: flex; gap: 7px; }
+        .window-dot { width: 8px; height: 8px; border-radius: 50%; background: #334155; }
+        .window-dot:first-child { background: #fb7185; }
+        .window-dot:nth-child(2) { background: #facc15; }
+        .window-dot:nth-child(3) { background: var(--green); }
+        .window-title { color: #70839c; font-size: 0.76rem; }
+        .preview-image { aspect-ratio: 16/9; width: 100%; object-fit: cover; background: #06111f; }
+        .preview-caption { display: flex; justify-content: space-between; gap: 16px; padding: 15px 18px; color: var(--muted); font-size: 0.8rem; }
+        .preview-caption strong { color: #dce8f6; }
+
+        .status-strip { display: grid; grid-template-columns: repeat(4, 1fr); border: 1px solid var(--border); border-radius: var(--radius-small); background: rgba(17, 32, 52, 0.52); }
+        .status-item { padding: 19px 22px; }
+        .status-item + .status-item { border-left: 1px solid var(--border); }
+        .status-label, .status-value { display: block; }
+        .status-label { margin-bottom: 4px; color: #70839c; font-size: 0.7rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; }
+        .status-value { color: #dce8f6; font-size: 0.92rem; font-weight: 750; }
+
+        section { padding: 90px 0; }
+        section + section { border-top: 1px solid rgba(148, 163, 184, 0.09); }
+        .section-heading { max-width: 790px; margin-bottom: 38px; }
+        .eyebrow { margin-bottom: 12px; color: #72c9ff; font-size: 0.78rem; font-weight: 850; letter-spacing: 0.13em; text-transform: uppercase; }
+        h2 { margin-bottom: 17px; font-size: clamp(2rem, 4.7vw, 3.5rem); letter-spacing: -0.045em; }
+        .section-description { color: var(--muted); font-size: 1.04rem; }
+
+        .proof-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .proof-card { overflow: hidden; border: 1px solid var(--border); border-radius: var(--radius); background: rgba(17,32,52,.58); }
+        .proof-card img { width: 100%; aspect-ratio: 16/9; object-fit: cover; background: #06111f; }
+        .proof-copy { padding: 20px; }
+        .proof-copy h3 { margin-bottom: 7px; font-size: 1.05rem; }
+        .proof-copy p { margin-bottom: 0; color: var(--muted); font-size: .88rem; }
+
+        .card-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+        .card { position: relative; overflow: hidden; min-height: 245px; padding: 24px; border: 1px solid var(--border); border-radius: var(--radius-small); background: linear-gradient(155deg, rgba(24, 43, 68, 0.78), rgba(10, 22, 38, 0.72)); }
+        .card-number { width: 38px; height: 38px; display: grid; place-items: center; margin-bottom: 40px; border: 1px solid rgba(96, 165, 250, 0.32); border-radius: 11px; color: #a8d2ff; background: rgba(59, 130, 246, 0.09); font-size: 0.84rem; font-weight: 850; }
+        .card h3 { margin-bottom: 10px; font-size: 1.08rem; }
+        .card p { margin-bottom: 0; color: var(--muted); font-size: 0.89rem; }
+
+        .pipeline { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; }
+        .pipeline-step { position: relative; min-height: 150px; padding: 18px; border: 1px solid var(--border); border-radius: 13px; background: rgba(4, 12, 23, 0.46); }
+        .pipeline-step:not(:last-child)::after { position: absolute; right: -10px; top: 50%; z-index: 2; content: "→"; transform: translate(50%, -50%); color: var(--blue); font-weight: 900; }
+        .pipeline-step span { display: block; margin-bottom: 27px; color: #6faee9; font-family: "SFMono-Regular", Consolas, monospace; font-size: 0.7rem; }
+        .pipeline-step strong { display: block; margin-bottom: 7px; font-size: .91rem; }
+        .pipeline-step p { margin-bottom: 0; color: #8194aa; font-size: .76rem; }
+
+        .architecture-panel { padding: 28px; border: 1px solid var(--border-strong); border-radius: var(--radius); background: linear-gradient(150deg, rgba(23, 42, 67, 0.78), rgba(7, 17, 31, 0.76)); box-shadow: var(--shadow); }
+        .architecture-banner { display: flex; justify-content: space-between; gap: 20px; align-items: center; margin-bottom: 20px; padding: 14px 16px; border: 1px solid rgba(251,191,36,.25); border-radius: 12px; color: #f8dfa0; background: rgba(251,191,36,.07); font-size: .84rem; }
+        .architecture-banner strong { color: #fff2c2; }
+        .architecture-flow { display: grid; grid-template-columns: repeat(4, 1fr); gap: 11px; }
+        .architecture-node { min-height: 184px; padding: 17px; border: 1px solid var(--border); border-radius: 13px; background: rgba(4, 12, 23, 0.46); }
+        .architecture-node .step { display: block; margin-bottom: 32px; color: #6faee9; font-family: "SFMono-Regular", Consolas, monospace; font-size: 0.72rem; }
+        .architecture-node strong { display: block; margin-bottom: 8px; color: #e8f2fc; font-size: 0.94rem; }
+        .architecture-node p { margin-bottom: 0; color: #8194aa; font-size: 0.78rem; }
+        .technology-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
+        .technology-tag { padding: 6px 10px; border: 1px solid rgba(148, 163, 184, 0.16); border-radius: 999px; color: #aebed1; background: rgba(255, 255, 255, 0.025); font-size: 0.75rem; }
+        .architecture-note { margin: 20px 0 0; padding-top: 18px; border-top: 1px solid var(--border); color: #768ba4; font-size: 0.82rem; }
+
+        .metric-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+        .metric-card { padding: 22px; border: 1px solid var(--border); border-radius: var(--radius-small); background: var(--surface); }
+        .metric-card h3 { margin-bottom: 9px; font-size: 1rem; }
+        .metric-card p { margin-bottom: 14px; color: var(--muted); font-size: 0.83rem; }
+        .measurement { display: inline-flex; padding: 5px 8px; border: 1px solid rgba(96,165,250,.23); border-radius: 999px; color: #9bd5ff; background: rgba(59,130,246,.07); font-family: "SFMono-Regular", Consolas, monospace; font-size: 0.7rem; }
+
+        .roadmap { display: grid; gap: 12px; }
+        .phase { display: grid; grid-template-columns: 110px 1fr auto; align-items: center; gap: 24px; padding: 22px 24px; border: 1px solid var(--border); border-radius: var(--radius-small); background: rgba(17, 32, 52, 0.55); }
+        .phase-index { color: #73bfff; font-family: "SFMono-Regular", Consolas, monospace; font-size: 0.78rem; }
+        .phase h3 { margin-bottom: 5px; font-size: 1rem; }
+        .phase p { margin-bottom: 0; color: var(--muted); font-size: 0.86rem; }
+        .phase-state { padding: 6px 10px; border: 1px solid rgba(96, 165, 250, 0.24); border-radius: 999px; color: #a7d3ff; background: rgba(59, 130, 246, 0.08); font-size: 0.72rem; font-weight: 800; }
+
+        .two-column { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+        .business-card, .trust-card { padding: 25px; border: 1px solid var(--border); border-radius: var(--radius-small); background: rgba(17, 32, 52, 0.52); }
+        .business-card h3, .trust-card h3 { margin-bottom: 11px; }
+        .bullet-list { display: grid; gap: 11px; margin: 0; padding: 0; list-style: none; }
+        .bullet-list li { position: relative; padding-left: 26px; color: var(--muted); font-size: .89rem; }
+        .bullet-list li::before { position: absolute; left: 0; top: .42em; width: 11px; height: 11px; content: ""; border-radius: 50%; background: var(--green); box-shadow: 0 0 0 4px rgba(52,211,153,.08); }
+
+        .founder-card { display: grid; grid-template-columns: auto 1fr; gap: 23px; padding: 27px; border: 1px solid var(--border); border-radius: var(--radius); background: linear-gradient(145deg, rgba(25, 46, 73, 0.8), rgba(10, 22, 38, 0.7)); }
+        .founder-avatar { width: 74px; height: 74px; display: grid; place-items: center; border: 1px solid rgba(96, 165, 250, 0.4); border-radius: 20px; color: #06111f; background: linear-gradient(135deg, #8bc4ff, #43d8e7); box-shadow: 0 16px 38px rgba(59, 130, 246, 0.2); font-size: 1.2rem; font-weight: 900; }
+        .founder-card h3 { margin-bottom: 4px; font-size: 1.25rem; }
+        .founder-role { margin-bottom: 13px; color: #73c7ff; font-size: 0.84rem; font-weight: 750; }
+        .founder-card p:last-child { margin-bottom: 0; color: var(--muted); }
+
+        .contact-panel { position: relative; overflow: hidden; padding: clamp(28px, 6vw, 58px); border: 1px solid rgba(96, 165, 250, 0.34); border-radius: var(--radius); background: radial-gradient(circle at 88% 25%, rgba(34, 211, 238, 0.17), transparent 20rem), linear-gradient(145deg, rgba(28, 51, 81, 0.86), rgba(10, 22, 38, 0.88)); box-shadow: var(--shadow); }
+        .contact-panel h2 { max-width: 760px; }
+        .contact-panel p { max-width: 760px; margin-bottom: 25px; color: #b2c1d3; }
+        .small-print { margin-top: 18px; color: #70839c; font-size: .77rem; }
+
+        footer { padding: 30px 0 42px; border-top: 1px solid rgba(148, 163, 184, 0.09); color: #64748b; font-size: 0.8rem; }
+        .footer-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; }
+        .footer-row p { max-width: 720px; margin: 0; }
+
+        :focus-visible { outline: 3px solid rgba(96, 165, 250, 0.85); outline-offset: 4px; }
+
+        @media (max-width: 1020px) {
+            .hero-grid { grid-template-columns: 1fr; }
+            .product-preview { max-width: 760px; }
+            .card-grid { grid-template-columns: repeat(2, 1fr); }
+            .pipeline { grid-template-columns: repeat(3, 1fr); }
+            .pipeline-step:nth-child(3)::after { display: none; }
+            .architecture-flow { grid-template-columns: repeat(2, 1fr); }
+            .status-strip { grid-template-columns: repeat(2, 1fr); }
+            .status-item:nth-child(3) { border-left: 0; border-top: 1px solid var(--border); }
+            .status-item:nth-child(4) { border-top: 1px solid var(--border); }
+        }
+
+        @media (max-width: 720px) {
+            .container { width: min(calc(100% - 28px), var(--content-width)); }
+            .nav-links { display: none; }
+            .mobile-menu { display: block; }
+            .hero { padding-top: 62px; }
+            h1 { font-size: clamp(2.65rem, 15vw, 4.2rem); }
+            .proof-grid, .card-grid, .pipeline, .architecture-flow, .metric-grid, .two-column, .status-strip { grid-template-columns: 1fr; }
+            .pipeline-step::after { display: none !important; }
+            .status-item + .status-item { border-top: 1px solid var(--border); border-left: 0; }
+            .phase { grid-template-columns: 1fr; gap: 10px; }
+            .phase-state { width: fit-content; }
+            .founder-card { grid-template-columns: 1fr; }
+            .architecture-banner { align-items: flex-start; flex-direction: column; }
+            .footer-row { flex-direction: column; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            html { scroll-behavior: auto; }
+            *, *::before, *::after { transition-duration: 0.01ms !important; }
+        }
+    </style>
+
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "BlitzPredict",
+        "applicationCategory": "GameApplication",
+        "operatingSystem": "Prototype in Google Colab; planned Android and Windows clients",
+        "description": "A working proof of concept that recognizes players from a World of Tanks Blitz loading-screen screenshot, retrieves public player statistics, and renders a tactical HUD.",
+        "author": {
+            "@type": "Organization",
+            "name": "Koksu Company",
+            "email": "karol@blitzpredict.info",
+            "url": "https://blitzpredict.info/"
+        }
+    }
+    </script>
+</head>
+
+<body>
+    <a class="skip-link" href="#main-content">Skip to content</a>
+
+    <header class="site-header">
+        <div class="container">
+            <nav class="navigation" aria-label="Primary navigation">
+                <a class="brand" href="#" aria-label="BlitzPredict home">
+                    <span class="brand-mark" aria-hidden="true">BP</span>
+                    <span>BlitzPredict <small>by Koksu Company</small></span>
+                </a>
+
+                <div class="nav-links">
+                    <a href="#proof">Proof of concept</a>
+                    <a href="#pipeline">Pipeline</a>
+                    <a href="#architecture">Roadmap</a>
+                    <a href="#contact">Contact</a>
+                </div>
+
+                <details class="mobile-menu">
+                    <summary>Menu</summary>
+                    <nav aria-label="Mobile navigation">
+                        <a href="#proof">Proof of concept</a>
+                        <a href="#pipeline">Pipeline</a>
+                        <a href="#architecture">Roadmap</a>
+                        <a href="#contact">Contact</a>
+                    </nav>
+                </details>
+            </nav>
+        </div>
+    </header>
+
+    <main id="main-content">
+        <section class="hero">
+            <div class="container">
+                <div class="hero-grid">
+                    <div>
+                        <div class="badge">
+                            <span class="badge-dot" aria-hidden="true"></span>
+                            Working proof of concept · manual screenshot input
+                        </div>
+
+                        <h1>
+                            From loading screen to
+                            <span class="gradient-text">readable player context.</span>
+                        </h1>
+
+                        <p class="hero-description">
+                            BlitzPredict recognizes the 14 players visible on a World of Tanks Blitz
+                            loading-screen screenshot, corrects OCR errors, retrieves public statistics
+                            through the official Wargaming API, and renders a tactical HUD with Win Rate,
+                            average damage, and team averages.
+                        </p>
+
+                        <div class="hero-actions">
+                            <!-- Replace https://youtu.be/JbSYKpwJIXs with the unlisted YouTube URL before publishing. -->
+                            <a class="button button-primary" href="https://youtu.be/JbSYKpwJIXs" rel="noopener noreferrer">
+                                Watch the 24-second demo <span aria-hidden="true">→</span>
+                            </a>
+                            <a class="button button-secondary" href="#proof">See what works today</a>
+                        </div>
+
+                        <p class="hero-note">
+                            Current implementation: Python notebook in Google Colab. The production client and cloud backend are planned, not yet deployed.
+                        </p>
+                    </div>
+
+                    <figure class="product-preview">
+                        <div class="window-bar">
+                            <div class="window-dots" aria-hidden="true">
+                                <span class="window-dot"></span>
+                                <span class="window-dot"></span>
+                                <span class="window-dot"></span>
+                            </div>
+                            <span class="window-title">BlitzPredict v3 · generated HUD</span>
+                        </div>
+                        <picture>
+                            <source srcset="assets/demo-output.webp" type="image/webp">
+                            <img class="preview-image" src="assets/demo-output.png" alt="BlitzPredict proof-of-concept output showing player Win Rate, average damage, and team averages on a World of Tanks Blitz loading screen">
+                        </picture>
+                        <figcaption class="preview-caption">
+                            <span><strong>Real PoC output</strong>, not a UI mock-up.</span>
+                            <span>WR · average damage · team averages</span>
+                        </figcaption>
+                    </figure>
+                </div>
+
+                <div class="status-strip" aria-label="Project status">
+                    <div class="status-item">
+                        <span class="status-label">Stage</span>
+                        <span class="status-value">Working proof of concept</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-label">Current stack</span>
+                        <span class="status-value">Python · EasyOCR · OpenCV</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-label">Input today</span>
+                        <span class="status-value">Manually supplied screenshot</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-label">Next milestone</span>
+                        <span class="status-value">Benchmark and standalone client</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="proof">
+            <div class="container">
+                <div class="section-heading">
+                    <p class="eyebrow">Working today</p>
+                    <h2>A real input, a real pipeline, and a real generated result.</h2>
+                    <p class="section-description">
+                        The current proof of concept validates the technical core. It does not yet claim
+                        automatic screen capture, a production backend, live overlay delivery, or commercial readiness.
+                    </p>
+                </div>
+
+                <div class="proof-grid">
+                    <article class="proof-card">
+                        <picture>
+                            <source srcset="assets/demo-input.webp" type="image/webp">
+                            <img src="assets/demo-input.png" alt="Original World of Tanks Blitz loading-screen screenshot used as the proof-of-concept input">
+                        </picture>
+                        <div class="proof-copy">
+                            <h3>Input</h3>
+                            <p>A manually supplied battle loading-screen screenshot containing two seven-player teams.</p>
+                        </div>
+                    </article>
+
+                    <article class="proof-card">
+                        <picture>
+                            <source srcset="assets/demo-output.webp" type="image/webp">
+                            <img src="assets/demo-output.png" alt="Generated BlitzPredict HUD with player statistics replacing the visible nicknames">
+                        </picture>
+                        <div class="proof-copy">
+                            <h3>Generated output</h3>
+                            <p>OpenCV masks the original nickname regions and renders returned WR, average damage, and team averages.</p>
+                        </div>
+                    </article>
+                </div>
+            </div>
+        </section>
+
+        <section id="product">
+            <div class="container">
+                <div class="section-heading">
+                    <p class="eyebrow">Current capabilities</p>
+                    <h2>The prototype already proves four critical components.</h2>
+                </div>
+
+                <div class="card-grid">
+                    <article class="card">
+                        <div class="card-number">01</div>
+                        <h3>Targeted OCR</h3>
+                        <p>EasyOCR processes the two player-list regions instead of scanning the entire screen without structure.</p>
+                    </article>
+                    <article class="card">
+                        <div class="card-number">02</div>
+                        <h3>Custom correction</h3>
+                        <p>A project-specific correction and cascading lookup system improves account matching when OCR misreads nicknames.</p>
+                    </article>
+                    <article class="card">
+                        <div class="card-number">03</div>
+                        <h3>Official API data</h3>
+                        <p>The prototype resolves player accounts and retrieves public Win Rate and average-damage statistics through Wargaming API endpoints.</p>
+                    </article>
+                    <article class="card">
+                        <div class="card-number">04</div>
+                        <h3>HUD generation</h3>
+                        <p>OpenCV renders a usable result directly onto the source image and calculates average team Win Rate.</p>
+                    </article>
+                </div>
+            </div>
+        </section>
+
+        <section id="pipeline">
+            <div class="container">
+                <div class="section-heading">
+                    <p class="eyebrow">Current pipeline</p>
+                    <h2>Clear enough to test, small enough to improve.</h2>
+                </div>
+
+                <div class="pipeline" aria-label="Current BlitzPredict processing pipeline">
+                    <div class="pipeline-step"><span>01 / INPUT</span><strong>Screenshot</strong><p>Manual proof-of-concept input.</p></div>
+                    <div class="pipeline-step"><span>02 / CROP</span><strong>Player regions</strong><p>Two team areas and fourteen rows.</p></div>
+                    <div class="pipeline-step"><span>03 / OCR</span><strong>Nickname reading</strong><p>EasyOCR extracts candidate text.</p></div>
+                    <div class="pipeline-step"><span>04 / CORRECT</span><strong>Account matching</strong><p>Custom correction and cascading lookup.</p></div>
+                    <div class="pipeline-step"><span>05 / API</span><strong>Public statistics</strong><p>Wargaming account and performance data.</p></div>
+                    <div class="pipeline-step"><span>06 / RENDER</span><strong>Tactical HUD</strong><p>OpenCV output and team averages.</p></div>
+                </div>
+            </div>
+        </section>
+
+        <section id="architecture">
+            <div class="container">
+                <div class="section-heading">
+                    <p class="eyebrow">Planned production architecture</p>
+                    <h2>A focused cloud path, clearly separated from the current PoC.</h2>
+                    <p class="section-description">
+                        The first production pilot should stay deliberately small. More complex streaming and historical analytics services can be added only when usage and benchmarks justify them.
+                    </p>
+                </div>
+
+                <div class="architecture-panel">
+                    <div class="architecture-banner">
+                        <span><strong>Planned, not deployed:</strong> the components below describe the intended pilot architecture.</span>
+                        <span>Subject to benchmarking, cost testing, and publisher-policy review.</span>
+                    </div>
+
+                    <div class="architecture-flow">
+                        <div class="architecture-node">
+                            <span class="step">01 / CLIENT</span>
+                            <strong>Android or Windows client</strong>
+                            <p>Capture workflow, local preprocessing, user controls, and result presentation.</p>
+                        </div>
+                        <div class="architecture-node">
+                            <span class="step">02 / API</span>
+                            <strong>Cloud Run backend</strong>
+                            <p>A containerized Python/FastAPI service for authenticated requests, account resolution, and analytics logic.</p>
+                        </div>
+                        <div class="architecture-node">
+                            <span class="step">03 / DATA</span>
+                            <strong>Cache and managed storage</strong>
+                            <p>Reduce repeated external API requests and store only data required for the authorized workflow.</p>
+                        </div>
+                        <div class="architecture-node">
+                            <span class="step">04 / OPERATE</span>
+                            <strong>Logging and monitoring</strong>
+                            <p>Measure failures, latency, cost, API behavior, and pilot reliability before broader release.</p>
+                        </div>
+                    </div>
+
+                    <div class="technology-tags" aria-label="Candidate Google Cloud services">
+                        <span class="technology-tag">Cloud Run</span>
+                        <span class="technology-tag">Artifact Registry</span>
+                        <span class="technology-tag">Secret Manager</span>
+                        <span class="technology-tag">Cloud Logging</span>
+                        <span class="technology-tag">Cloud Monitoring</span>
+                        <span class="technology-tag">Managed database/cache</span>
+                        <span class="technology-tag">BigQuery later, if justified</span>
+                    </div>
+
+                    <p class="architecture-note">
+                        This architecture is a roadmap for turning the validated notebook pipeline into a controlled, measurable pilot. It is not presented as an already running production system.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <section id="validation">
+            <div class="container">
+                <div class="section-heading">
+                    <p class="eyebrow">Planned validation metrics</p>
+                    <h2>The next version will replace placeholders with documented measurements.</h2>
+                    <p class="section-description">
+                        No benchmark numbers are invented here. Results will be published after a repeatable test set, methodology, and sample size are defined.
+                    </p>
+                </div>
+
+                <div class="metric-grid">
+                    <article class="metric-card"><h3>Nickname accuracy</h3><p>Exact-match success across varied screens, aspect ratios, clan tags, underscores, and long names.</p><span class="measurement">TBD after test set</span></article>
+                    <article class="metric-card"><h3>Account resolution</h3><p>How often OCR candidates resolve to the correct Wargaming account after correction and cascading lookup.</p><span class="measurement">TBD after test set</span></article>
+                    <article class="metric-card"><h3>End-to-end latency</h3><p>Time from available screenshot to completed statistics and rendered HUD.</p><span class="measurement">TBD: p50 · p95</span></article>
+                    <article class="metric-card"><h3>Pilot unit economics</h3><p>Estimated cloud cost per processed battle and per active user at controlled pilot volume.</p><span class="measurement">TBD after cloud pilot</span></article>
+                </div>
+            </div>
+        </section>
+
+        <section id="roadmap">
+            <div class="container">
+                <div class="section-heading">
+                    <p class="eyebrow">Execution roadmap</p>
+                    <h2>Build the evidence first, then scale the product.</h2>
+                </div>
+
+                <div class="roadmap">
+                    <article class="phase">
+                        <span class="phase-index">PHASE 01</span>
+                        <div><h3>Benchmark and harden the PoC</h3><p>Build a documented test set, measure OCR/account-resolution accuracy, instrument timing, and catalogue failure cases.</p></div>
+                        <span class="phase-state">Current</span>
+                    </article>
+                    <article class="phase">
+                        <span class="phase-index">PHASE 02</span>
+                        <div><h3>Build the standalone client and controlled backend</h3><p>Develop the Android/Windows workflow, authenticated API, cache, monitoring, and a limited private pilot.</p></div>
+                        <span class="phase-state">Next</span>
+                    </article>
+                    <article class="phase">
+                        <span class="phase-index">PHASE 03</span>
+                        <div><h3>Validate product demand and repeatable scale</h3><p>Test subscriptions or team plans, verify cost assumptions, expand analytics, and complete publisher-specific compliance review.</p></div>
+                        <span class="phase-state">Planned</span>
+                    </article>
+                </div>
+            </div>
+        </section>
+
+        <section id="business">
+            <div class="container">
+                <div class="section-heading">
+                    <p class="eyebrow">Commercial direction and responsible scope</p>
+                    <h2>An ambitious future, without rewriting the present.</h2>
+                </div>
+
+                <div class="two-column">
+                    <article class="business-card">
+                        <h3>Planned business model</h3>
+                        <ul class="bullet-list">
+                            <li>Subscription access for individual advanced players.</li>
+                            <li>Clan and team plans with shared analytical tools.</li>
+                            <li>Controlled pilot access for coaches, tournament teams, or analytical partners.</li>
+                            <li>Future modules may include session analytics, prediction, and coaching support after sufficient data and validation.</li>
+                        </ul>
+                    </article>
+
+                    <article class="trust-card">
+                        <h3>Product boundaries</h3>
+                        <ul class="bullet-list">
+                            <li>Publicly visible on-screen information and official public API data.</li>
+                            <li>No game-client code injection, memory reading, packet interception, or gameplay automation.</li>
+                            <li>Data minimization and no raw-image retention unless explicitly required and disclosed.</li>
+                            <li>Live-release scope remains subject to Wargaming policy review and applicable platform rules.</li>
+                        </ul>
+                    </article>
+                </div>
+            </div>
+        </section>
+
+        <section id="founder">
+            <div class="container">
+                <div class="section-heading">
+                    <p class="eyebrow">Founder</p>
+                    <h2>Product direction and technical ownership in one place.</h2>
+                </div>
+
+                <article class="founder-card">
+                    <div class="founder-avatar" aria-hidden="true">K</div>
+                    <div>
+                        <h3>Karol</h3>
+                        <p class="founder-role">Founder &amp; Developer · Koksu Company</p>
+                        <p>
+                            Karol built and tested the current Python proof of concept with AI-assisted development. He is responsible for the product concept, World of Tanks Blitz domain knowledge, OCR correction logic, API workflow, technical decisions, testing, and the path from notebook prototype to a commercial application.
+                        </p>
+                    </div>
+                </article>
+            </div>
+        </section>
+
+        <section id="contact">
+            <div class="container">
+                <div class="contact-panel">
+                    <p class="eyebrow">Pilot and infrastructure support</p>
+                    <h2>Turn the validated core into a measurable product pilot.</h2>
+                    <p>
+                        Cloud resources would be used to package the backend, secure external API access, introduce caching and observability, benchmark performance, and support a limited pilot. The immediate goal is not unspecified scale. It is reliable evidence.
+                    </p>
+
+                    <div class="contact-actions">
+                        <a class="button button-primary" href="mailto:karol@blitzpredict.info?subject=BlitzPredict%20discussion">
+                            Contact Karol <span aria-hidden="true">→</span>
+                        </a>
+                        <!-- Replace https://youtu.be/JbSYKpwJIXs with the same unlisted YouTube URL used above. -->
+                        <a class="button button-secondary" href="https://youtu.be/JbSYKpwJIXs" rel="noopener noreferrer">Watch demo</a>
+                    </div>
+
+                    <p class="small-print">
+                        BlitzPredict is an independent project. World of Tanks Blitz and related marks are trademarks of Wargaming. This project is not affiliated with or endorsed by Wargaming.
+                    </p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container footer-row">
+            <span>&copy; 2026 Koksu Company. All rights reserved.</span>
+            <p>BlitzPredict is currently a working proof of concept. Production features, deployment architecture, commercial availability, and live integration remain planned work.</p>
+        </div>
+    </footer>
+</body>
+</html>
