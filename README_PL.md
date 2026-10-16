@@ -1,153 +1,101 @@
-# BlitzPredict site — instrukcja publikacji
+# BlitzPredict — strona projektu
 
-Ten pakiet jest przygotowany pod istniejące repozytorium użytkownika GitHub Pages `byczekbyczek.github.io`.
+Statyczny landing page projektu BlitzPredict publikowany przez GitHub Pages pod adresem
+https://blitzpredict.info.
 
-## Co jest już gotowe
+Repozytorium strony jest oddzielone od prywatnego repozytorium aplikacji
+byczekbyczek/BlitzPredict.
 
-- `index.html` — pełna poprawiona strona.
-- `assets/demo-input.*` — prawdziwy screenshot wejściowy PoC.
-- `assets/demo-output.*` — prawdziwy wynik BlitzPredict.
-- `CNAME` — domena `blitzpredict.info`.
-- `robots.txt`, `sitemap.xml`, `404.html`, favicon.
+## Technologia
 
-## Dwie rzeczy do uzupełnienia przed publikacją
+- pojedynczy plik index.html,
+- CSS osadzony w dokumencie,
+- brak JavaScriptu aplikacyjnego,
+- brak frameworka, bundlera i zewnętrznych zależności,
+- GitHub Pages z domeną z pliku CNAME.
 
-W `index.html` wyszukaj dwukrotnie:
+## Co pokazuje obecna strona
 
-```text
-DEMO_URL_HERE
-```
+Treść odpowiada stanowi aplikacji po scaleniu PR #26:
 
-Zastąp oba wystąpienia linkiem do niepublicznego filmu YouTube.
+- lokalna wersja rozwojowa dla Windows,
+- GUI i CLI oparte na wspólnym serwisie analizy,
+- ręczny wybór pełnego ekranu ładowania,
+- adaptacyjna geometria dwóch składów po siedem osób,
+- obsługa układu matchmakingu preferencyjnego i standardowego,
+- lokalny EasyOCR,
+- konserwatywne dopasowanie kont: tylko jednoznaczny exact match jest zaufany,
+- kontrolowany klient oficjalnego API Wargaming,
+- generowanie i eksport HUD,
+- testy na Windows i Ubuntu dla Pythona 3.11–3.13,
+- deterministyczny benchmark offline,
+- prywatne, agregatowe audyty geometrii i realnego OCR,
+- walidacja wewnętrznej paczki portable Windows.
 
-Sprawdź również, czy adres kontaktowy pozostaje poprawny:
+Strona jasno oddziela gotowe elementy od planów. Nie przedstawia automatycznego
+przechwytywania ekranu, live overlay, chmury, subskrypcji, aplikacji mobilnej ani
+publicznej podpisanej paczki jako ukończonych funkcji.
 
-```text
-karol@blitzpredict.info
-```
+## Prywatność materiałów demonstracyjnych
 
-## Zalecana kolejność
+Landing page nie publikuje screenów z gry ani prawdziwych nicków. Widok produktu
+jest syntetycznym mockupem zbudowanym wyłącznie w HTML i CSS, z wymyślonymi
+nazwami i wartościami.
 
-1. Najpierw wgraj nowe pliki do repozytorium `byczekbyczek.github.io` i sprawdź stronę pod dotychczasowym adresem GitHub Pages.
-2. Zweryfikuj domenę na poziomie konta GitHub.
-3. Dodaj `blitzpredict.info` jako Custom domain w ustawieniach Pages repozytorium.
-4. Dopiero potem ustaw rekordy DNS u operatora domeny.
-5. Po propagacji DNS włącz `Enforce HTTPS`.
+Starsze pliki demo-input.* i demo-output.* zostały usunięte z bieżącego drzewa
+publikacji. Historia Git zachowuje wcześniejsze wersje repozytorium.
 
-GitHub zaleca dodanie domeny do konfiguracji Pages przed skierowaniem DNS na GitHub, aby ograniczyć ryzyko przejęcia domeny.
+## Pliki
 
-## Krok 1 — wgranie kodu
+- index.html — treść, style, semantyka i syntetyczny mockup produktu,
+- assets/favicon.svg — favicon,
+- CNAME — domena blitzpredict.info,
+- robots.txt — reguły indeksowania,
+- sitemap.xml — mapa strony,
+- 404.html — prosta strona błędu,
+- CHANGELOG.md — historia publicznych zmian.
 
-W repozytorium `byczekbyczek.github.io`:
+## Kontrola przed publikacją
 
-1. Zrób kopię obecnego `index.html`.
-2. Zastąp pliki w katalogu głównym zawartością tego pakietu.
-3. Folder `assets` musi znaleźć się obok `index.html`.
-4. Commit, na przykład:
+Przed scaleniem zmian należy sprawdzić:
 
-```text
-Rebuild BlitzPredict landing page for startup application
-```
+1. poprawność składni HTML,
+2. poprawność JSON-LD,
+3. unikalność wszystkich atrybutów id,
+4. istnienie celu dla każdego lokalnego linku z kotwicą,
+5. istnienie wszystkich lokalnych plików wskazanych przez href i src,
+6. obecność opisu alt dla ewentualnych obrazów treści,
+7. widok desktopowy i mobilny przez lokalny serwer HTTP,
+8. wynik git diff --check.
 
-5. Sprawdź stronę pod adresem `byczekbyczek.github.io`.
+Do szybkiego lokalnego podglądu uruchom w tym katalogu:
 
-## Krok 2 — bezpieczna weryfikacja domeny na GitHubie
+    python -m http.server 8080
 
-Na GitHubie przejdź do ustawień swojego profilu, nie repozytorium:
+Następnie otwórz:
 
-1. Profile picture → `Settings`.
-2. `Pages` w sekcji Code, planning and automation.
-3. `Add a domain`.
-4. Wpisz `blitzpredict.info`.
-5. GitHub pokaże rekord TXT do dodania w DNS domeny.
-6. Dodaj ten rekord TXT u operatora i pozostaw go na stałe.
-7. Wróć do GitHuba i kliknij `Verify`.
+    http://127.0.0.1:8080/
 
-Nie dodawaj wildcard DNS typu `*.blitzpredict.info`.
+## Publikacja
 
-## Krok 3 — Custom domain w repozytorium
+GitHub Pages publikuje zawartość głównej gałęzi repozytorium użytkownika.
+Scalenie zmian do main aktualizuje publiczną stronę, dlatego przed merge trzeba
+obejrzeć lokalny render na szerokim i wąskim viewportcie.
 
-1. Otwórz repozytorium `byczekbyczek.github.io`.
-2. `Settings` → `Pages`.
-3. W polu `Custom domain` wpisz:
+Po wdrożeniu należy potwierdzić:
 
-```text
-blitzpredict.info
-```
+- https://blitzpredict.info/ zwraca HTTP 200,
+- dokument ma aktualny tytuł i opis,
+- favicon, robots.txt oraz sitemap.xml zwracają HTTP 200,
+- HTTPS pozostaje aktywny,
+- na stronie nie ma surowych screenshotów ani prawdziwych identyfikatorów graczy.
 
-4. Kliknij `Save`.
+## Kontakt
 
-Plik `CNAME` z tego pakietu zawiera już tę samą domenę.
+Publiczny adres projektu:
 
-## Krok 4 — DNS domeny
+    karol@blitzpredict.info
 
-U operatora domeny dodaj cztery rekordy A dla domeny głównej:
-
-| Typ | Nazwa / Host | Wartość |
-|---|---|---|
-| A | `@` | `185.199.108.153` |
-| A | `@` | `185.199.109.153` |
-| A | `@` | `185.199.110.153` |
-| A | `@` | `185.199.111.153` |
-
-Dodaj również:
-
-| Typ | Nazwa / Host | Wartość |
-|---|---|---|
-| CNAME | `www` | `byczekbyczek.github.io` |
-
-### Bardzo ważne dla firmowego maila
-
-Nie usuwaj ani nie zmieniaj istniejących rekordów:
-
-- MX,
-- SPF,
-- DKIM,
-- rekordów weryfikacyjnych poczty.
-
-Dodajesz rekordy strony obok rekordów pocztowych. Samo dodanie rekordów A/CNAME nie powinno wyłączyć poczty, o ile nie skasujesz MX/TXT.
-
-DNS może propagować się do 24 godzin.
-
-## Krok 5 — HTTPS
-
-Po poprawnym rozpoznaniu domeny:
-
-1. Repozytorium → `Settings` → `Pages`.
-2. Zaznacz `Enforce HTTPS`.
-
-Opcja może pojawić się z opóźnieniem po propagacji DNS.
-
-## Krok 6 — Google for Startups Cloud Program
-
-Przed wysłaniem wniosku sprawdź spójność:
-
-```text
-Public website: https://blitzpredict.info
-Business email: karol@blitzpredict.info
-Google Cloud billing account: konto/dostęp powiązany z tym firmowym adresem
-```
-
-Google wymaga, aby firmowy adres użyty we wniosku odpowiadał domenie publicznej strony startupu. Przygotuj również 18-znakowy Billing Account ID.
-
-## Co strona mówi obecnie
-
-### Działa teraz
-
-- ręcznie dostarczony screenshot,
-- EasyOCR,
-- autorska korekcja i kaskadowe wyszukiwanie kont,
-- publiczne Wargaming API,
-- WR i average damage,
-- team averages,
-- wygenerowany HUD w OpenCV.
-
-### Jest planowane
-
-- standalone Android/Windows client,
-- kontrolowany backend w Google Cloud,
-- cache, monitoring i testy kosztowe,
-- prywatny pilot,
-- dalsze moduły analityczne i model subskrypcyjny.
-
-Ta granica jest celowo jasna, aby strona nie przedstawiała planów jako gotowej infrastruktury.
+Strona opisuje BlitzPredict jako niezależny projekt Karola. Nie deklaruje formy
+prawnej działalności; nazwa prawna używana w zewnętrznych formularzach musi
+odpowiadać rzeczywistym dokumentom właściciela.
