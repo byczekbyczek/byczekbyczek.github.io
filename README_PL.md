@@ -8,9 +8,9 @@ byczekbyczek/BlitzPredict.
 
 ## Technologia
 
-- pojedynczy plik index.html,
+- statyczne dokumenty index.html i replay-lab.html,
 - CSS osadzony w dokumencie,
-- brak JavaScriptu aplikacyjnego,
+- niewielki JavaScript bezpośrednio w replay-lab.html wyłącznie do obsługi syntetycznej osi czasu,
 - brak frameworka, bundlera i zewnętrznych zależności,
 - GitHub Pages z domeną z pliku CNAME.
 
@@ -39,6 +39,19 @@ watchera, automatycznego wykrywania bitwy, live overlay, hooków wejścia, autom
 rozgrywki, chmury, subskrypcji, aplikacji mobilnej ani publicznej podpisanej paczki
 jako ukończonych funkcji.
 
+## Replay Lab — research concept
+
+Osobna podstrona replay-lab.html pokazuje klikalną wizję przyszłego analizatora
+powtórek po bitwie. Cały scenariusz, mapa, trasy, wykres i coaching są syntetyczne.
+Podstrona nie udostępnia prawdziwego uploadu i jasno informuje, że parser replayów,
+wytrenowany model prawdopodobieństwa, trener AI, backend oraz widok z perspektywy
+gracza nie są funkcjami obecnej aplikacji.
+
+Makieta służy do sprawdzenia kierunku produktu i interakcji. Kolejność badań na
+stronie zaczyna się od walidacji parsera na autoryzowanych próbkach, następnie
+prowadzi przez deterministyczny widok 2D, mierzalny model i dopiero na końcu
+coaching oparty na zweryfikowanych faktach.
+
 ## Prywatność materiałów demonstracyjnych
 
 Landing page nie publikuje screenów z gry ani prawdziwych nicków. Widok produktu
@@ -51,6 +64,7 @@ publikacji. Historia Git zachowuje wcześniejsze wersje repozytorium.
 ## Pliki
 
 - index.html — treść, style, semantyka i syntetyczny mockup produktu,
+- replay-lab.html — interaktywny, syntetyczny koncept analizatora powtórek,
 - assets/favicon.svg — favicon,
 - CNAME — domena blitzpredict.info,
 - robots.txt — reguły indeksowania,
