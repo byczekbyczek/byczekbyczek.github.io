@@ -2090,5 +2090,13 @@
             <p>Windows development alpha. Explicit one-shot window capture with a manual image fallback; no watcher, live overlay, deployed backend, or public signed release.</p>
         </div>
     </footer>
+    <script>
+        document.querySelectorAll(".mobile-menu nav a").forEach(function (link) {
+            link.addEventListener("click", function () {
+                var menu = link.closest("details");
+                if (menu) menu.removeAttribute("open");
+            });
+        });
+    </script>
 </body>
 </html>
