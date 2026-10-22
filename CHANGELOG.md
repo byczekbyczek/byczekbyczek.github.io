@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-10-22
+
+- Updated the site to match merged application PR #31 and its explicit, one-shot Windows game-window capture path.
+- Described the permanent manual JPG, PNG, and WebP fallback alongside native capture instead of presenting file input as the only workflow.
+- Added the capture boundary: user-triggered, selected-window-only acquisition with loading-screen preflight and no continuous watching or automatic battle detection.
+- Replaced the obsolete capture-scope roadmap item with a controlled Windows compatibility matrix followed, only if justified, by evaluation of an opt-in watcher.
+- Kept the live overlay, input hooks, gameplay automation, hosted backend, and public signed release outside shipped claims.
+
 ## 2026-10-16
 
 - Rebuilt the landing page around the current Windows development alpha.
