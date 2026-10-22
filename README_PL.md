@@ -16,11 +16,13 @@ byczekbyczek/BlitzPredict.
 
 ## Co pokazuje obecna strona
 
-Treść odpowiada stanowi aplikacji po scaleniu PR #26:
+Treść odpowiada stanowi aplikacji po scaleniu PR #31:
 
 - lokalna wersja rozwojowa dla Windows,
 - GUI i CLI oparte na wspólnym serwisie analizy,
-- ręczny wybór pełnego ekranu ładowania,
+- jawny, jednorazowy przechwyt klatki z wybranego okna gry w Windows,
+- stały fallback przez ręczny wybór JPG, PNG lub WebP,
+- dla klatki przechwyconej z okna: fail-closed preflight ekranu ładowania przed OCR i zapytaniami API,
 - adaptacyjna geometria dwóch składów po siedem osób,
 - obsługa układu matchmakingu preferencyjnego i standardowego,
 - lokalny EasyOCR,
@@ -32,9 +34,10 @@ Treść odpowiada stanowi aplikacji po scaleniu PR #26:
 - prywatne, agregatowe audyty geometrii i realnego OCR,
 - walidacja wewnętrznej paczki portable Windows.
 
-Strona jasno oddziela gotowe elementy od planów. Nie przedstawia automatycznego
-przechwytywania ekranu, live overlay, chmury, subskrypcji, aplikacji mobilnej ani
-publicznej podpisanej paczki jako ukończonych funkcji.
+Strona jasno oddziela gotowe elementy od planów. Nie przedstawia ciągłego
+watchera, automatycznego wykrywania bitwy, live overlay, hooków wejścia, automatyzacji
+rozgrywki, chmury, subskrypcji, aplikacji mobilnej ani publicznej podpisanej paczki
+jako ukończonych funkcji.
 
 ## Prywatność materiałów demonstracyjnych
 

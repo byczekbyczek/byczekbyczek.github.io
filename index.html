@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
     <title>BlitzPredict | Local World of Tanks Blitz roster analytics</title>
-    <meta name="description" content="BlitzPredict is a Windows development alpha that turns a manually selected World of Tanks Blitz loading screen into a local tactical HUD using adaptive roster detection, OCR, conservative account matching, and the official Wargaming API.">
+    <meta name="description" content="BlitzPredict is a Windows development alpha that captures one frame from an explicitly selected World of Tanks Blitz game window or analyzes a loading-screen image, then builds a local tactical HUD using adaptive roster detection, OCR, conservative account matching, and the official Wargaming API.">
     <meta name="theme-color" content="#060a12">
     <meta name="robots" content="index,follow">
     <link rel="canonical" href="https://blitzpredict.info/">
@@ -1364,7 +1364,7 @@
         "operatingSystem": "Windows",
         "softwareVersion": "0.1.0-alpha",
         "url": "https://blitzpredict.info/",
-        "description": "A Windows development alpha that analyzes manually selected World of Tanks Blitz loading-screen screenshots using local roster detection and OCR, conservative account matching, public Wargaming API statistics, and local HUD rendering.",
+        "description": "A Windows development alpha that captures one frame from an explicitly selected World of Tanks Blitz game window or analyzes a loading-screen image using local roster detection and OCR, conservative account matching, public Wargaming API statistics, and local HUD rendering.",
         "author": {
             "@type": "Person",
             "name": "Karol",
@@ -1417,7 +1417,7 @@
                     <div>
                         <div class="eyebrow-pill">
                             <span class="eyebrow-dot" aria-hidden="true"></span>
-                            Windows development alpha · local screenshot workflow
+                            Windows development alpha · explicit one-shot capture + file fallback
                         </div>
 
                         <h1>
@@ -1426,10 +1426,10 @@
                         </h1>
 
                         <p class="hero-description">
-                            BlitzPredict analyzes a manually selected World of Tanks Blitz loading screen,
-                            recognizes both compact preferential and wider standard 7v7 rosters, resolves
-                            player identities conservatively through the official Wargaming API, and
-                            renders an exportable tactical HUD.
+                            BlitzPredict captures one frame from an explicitly selected World of Tanks Blitz
+                            game window or accepts a JPG, PNG, or WebP loading-screen image. It recognizes both
+                            compact preferential and wider standard 7v7 rosters, resolves player identities
+                            conservatively through the official Wargaming API, and renders an exportable tactical HUD.
                         </p>
 
                         <div class="hero-actions">
@@ -1440,8 +1440,9 @@
                         </div>
 
                         <p class="hero-note">
-                            Player recognition and HUD rendering run locally. Automatic capture, a live
-                            overlay, a hosted backend, and public distribution are not part of the current build.
+                            Capture is user-triggered, window-only, and one-shot. Continuous watching,
+                            automatic battle detection, a live overlay, input hooks, gameplay automation,
+                            a hosted backend, and public distribution are not part of the current build.
                         </p>
                     </div>
 
@@ -1523,11 +1524,11 @@
                     </div>
                     <div class="status-card">
                         <span>Input today</span>
-                        <strong>Manual full-screen image</strong>
+                        <strong>Selected game window or image</strong>
                     </div>
                     <div class="status-card">
                         <span>Current focus</span>
-                        <strong>Measured OCR quality</strong>
+                        <strong>Capture compatibility evidence</strong>
                     </div>
                 </div>
             </div>
@@ -1549,7 +1550,7 @@
                     <article class="capability-card">
                         <div class="card-index">01</div>
                         <h3>Desktop GUI and CLI</h3>
-                        <p>Select a JPG, PNG, or WebP loading screen, run analysis in a background worker, preview the result, and export the HUD without replacing the command-line path.</p>
+                        <p>The GUI can capture one frame from an explicitly selected game window or use a JPG, PNG, or WebP fallback. Analysis stays in a background worker, while the file-based command-line path remains available.</p>
                     </article>
                     <article class="capability-card">
                         <div class="card-index">02</div>
@@ -1593,7 +1594,7 @@
 
                 <div class="pipeline-panel">
                     <div class="pipeline" aria-label="BlitzPredict processing pipeline">
-                        <div class="pipeline-step"><span>01 / INPUT</span><strong>Full screenshot</strong><p>A manually selected battle loading screen.</p></div>
+                        <div class="pipeline-step"><span>01 / INPUT</span><strong>Selected window or file</strong><p>One user-triggered game-window frame or a manually selected loading-screen image.</p></div>
                         <div class="pipeline-step"><span>02 / PLAN</span><strong>Roster geometry</strong><p>Normalize, identify the layout, and produce 14 row crops.</p></div>
                         <div class="pipeline-step"><span>03 / READ</span><strong>Local OCR</strong><p>Extract nickname candidates with deterministic preprocessing.</p></div>
                         <div class="pipeline-step"><span>04 / TRUST</span><strong>Exact identity</strong><p>Reject uncertain or ambiguous account resolution.</p></div>
@@ -1654,6 +1655,11 @@
                                 <div><strong>Windows portable validation</strong><small>Locked CPU build, archive extraction, structural checks, and a native OCR import probe.</small></div>
                                 <span class="audit-state">Internal</span>
                             </div>
+                            <div class="audit-row">
+                                <span class="audit-icon" aria-hidden="true">✓</span>
+                                <div><strong>Native one-shot capture path</strong><small>Explicit window selection, owned in-memory frame, loading-screen preflight, fixed failure categories, Stop handling, and permanent file fallback.</small></div>
+                                <span class="audit-state">Implemented</span>
+                            </div>
                         </div>
                     </article>
 
@@ -1696,10 +1702,11 @@
                 <div class="boundary-grid">
                     <article class="boundary-card current">
                         <span class="boundary-label">Current local build</span>
-                        <h3>Windows screenshot analysis</h3>
+                        <h3>One-shot window capture and image analysis</h3>
                         <p>A Python application with shared services for GUI, CLI, benchmarks, audits, and the portable build.</p>
                         <ul class="bullet-list">
-                            <li>Manual local file selection and local image processing.</li>
+                            <li>Explicit, one-shot Windows game-window capture with loading-screen preflight.</li>
+                            <li>Manual JPG, PNG, and WebP selection as the permanent fallback.</li>
                             <li>Adaptive and fallback roster geometry.</li>
                             <li>EasyOCR model stored on the user's machine.</li>
                             <li>Direct official Wargaming API requests for trusted identities.</li>
@@ -1713,7 +1720,7 @@
                         <p>These items are roadmap candidates, not deployed product capabilities.</p>
                         <ul class="bullet-list">
                             <li>Signed Windows distribution with licensing and notices complete.</li>
-                            <li>A documented automatic capture target and permission model.</li>
+                            <li>An opt-in automatic watcher only after a controlled compatibility matrix.</li>
                             <li>A small private pilot with cost and reliability measurements.</li>
                             <li>An optional authenticated backend, cache, and monitoring only when needed.</li>
                             <li>Publisher-policy review before any live-use release.</li>
@@ -1733,17 +1740,17 @@
                 <div class="roadmap">
                     <article class="phase">
                         <span class="phase-index">FOUNDATION</span>
-                        <div><h3>Extract and harden the application core</h3><p>Package, GUI, CLI, safe matching, managed API access, adaptive geometry, CI, portable build validation, and aggregate diagnostics.</p></div>
+                        <div><h3>Extract and harden the application core</h3><p>Package, GUI, CLI, safe matching, managed API access, adaptive geometry, explicit one-shot window capture, CI, portable build validation, and aggregate diagnostics.</p></div>
                         <span class="phase-state">Built</span>
                     </article>
                     <article class="phase current">
                         <span class="phase-index">CURRENT</span>
-                        <div><h3>Run one bounded OCR-quality iteration</h3><p>Compare deterministic crop preprocessing against the same private development baseline and keep the change only if aggregate guardrails improve.</p></div>
+                        <div><h3>Measure capture compatibility</h3><p>Run a controlled Windows matrix across game modes, DPI scales, resolutions, monitor layouts, occlusion, minimization, HDR, and hybrid-GPU setups without retaining raw frames.</p></div>
                         <span class="phase-state">In progress</span>
                     </article>
                     <article class="phase">
                         <span class="phase-index">NEXT</span>
-                        <div><h3>Measure native latency and choose capture scope</h3><p>Record controlled cold and warm Windows runs, then document the first automatic-capture platform, permissions, trigger, and manual fallback.</p></div>
+                        <div><h3>Evaluate an opt-in watcher</h3><p>Only after the matrix passes, measure low-rate sampling, stable loading-screen triggers, once-per-battle latching, cleanup behavior, and resource use while preserving the manual fallback.</p></div>
                         <span class="phase-state">Queued</span>
                     </article>
                     <article class="phase">
@@ -1763,7 +1770,7 @@
                 </div>
 
                 <div class="limits-grid">
-                    <article class="limit-card"><h3>Manual input</h3><p>The current GUI opens a saved screenshot. It does not detect or capture the game window automatically.</p></article>
+                    <article class="limit-card"><h3>Explicit one-shot capture</h3><p>The current GUI captures exactly one frame after the user selects a game window and starts a scan. It does not watch continuously or detect battles automatically.</p></article>
                     <article class="limit-card"><h3>No live overlay</h3><p>The application renders an output image after analysis. It is not an in-game or always-on overlay.</p></article>
                     <article class="limit-card"><h3>OCR still under development</h3><p>The private baseline selects the next experiment; it is not a release threshold or independent holdout.</p></article>
                     <article class="limit-card"><h3>Internal portable build</h3><p>The Windows package path is validated in CI but remains unsigned and is not publicly distributed.</p></article>
@@ -1801,9 +1808,9 @@
                     <p class="section-kicker">Build the next evidence milestone</p>
                     <h2>BlitzPredict is ready for focused development, not inflated promises.</h2>
                     <p>
-                        The immediate work is concrete: improve OCR against fixed privacy guardrails,
-                        measure native performance, choose one capture target, and prepare a responsible
-                        private pilot. For technical, product, or pilot discussions, contact Karol.
+                        The immediate work is concrete: validate the one-shot capture path across a controlled
+                        Windows compatibility matrix, keep improving OCR against fixed privacy guardrails, and
+                        prepare a responsible private pilot. For technical, product, or pilot discussions, contact Karol.
                     </p>
 
                     <div class="contact-actions">
@@ -1825,8 +1832,16 @@
     <footer>
         <div class="container footer-row">
             <span>&copy; 2026 BlitzPredict.</span>
-            <p>Windows development alpha. Manual screenshot input, no live overlay, no deployed backend, and no public signed release.</p>
+            <p>Windows development alpha. Explicit one-shot window capture with a manual image fallback; no watcher, live overlay, deployed backend, or public signed release.</p>
         </div>
     </footer>
+    <script>
+        document.querySelectorAll(".mobile-menu nav a").forEach(function (link) {
+            link.addEventListener("click", function () {
+                var menu = link.closest("details");
+                if (menu) menu.removeAttribute("open");
+            });
+        });
+    </script>
 </body>
 </html>
