@@ -2,6 +2,9 @@
 
 ## 2026-10-22
 
+- Added Replay Lab as a separate, clearly labelled research concept with an interactive synthetic battle timeline, a fictional 2D tactical view, an illustrative estimated-win curve, and timestamped mock coaching.
+- Added a factual Replay Lab teaser to the landing page and kept replay parsing, uploads, trained probability models, AI coaching, and player-perspective rendering outside current product claims.
+- Extended the sitemap with the Replay Lab concept page.
 - Updated the site to match merged application PR #31 and its explicit, one-shot Windows game-window capture path.
 - Described the permanent manual JPG, PNG, and WebP fallback alongside native capture instead of presenting file input as the only workflow.
 - Added the capture boundary: user-triggered, selected-window-only acquisition with loading-screen preflight and no continuous watching or automatic battle detection.
